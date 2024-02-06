@@ -1,12 +1,13 @@
 package main
 
 import (
+	api "mybank/api"
 	"net/http"
 )
 
 func main() {
 
-	http.HandleFunc("/balance", getBalance)
+	http.HandleFunc("/balance", api.GetBalance)
 
 	http.ListenAndServe(":80", nil)
 }
