@@ -10,10 +10,7 @@ func removeDuplicates(x *[]int) {
 		_, ok := dict[(*x)[i]]
 
 		if ok {
-			slice := make([]int, len(*x)-1)
-			copy(slice, (*x)[:i])
-			copy(slice[i:], (*x)[i+1:])
-			*x = slice
+			*x = append((*x)[:i], (*x)[i+1:]...)
 			i--
 		} else {
 			dict[(*x)[i]] = 1
@@ -25,7 +22,7 @@ func removeDuplicates(x *[]int) {
 
 func main() {
 	x := make([]int, 0, 4)
-	x = append(x, 1, 1, 2, 3)
+	x = append(x, 0, 0, 1, 0, 0, 1)
 	removeDuplicates(&x)
 	fmt.Println(x)
 }
