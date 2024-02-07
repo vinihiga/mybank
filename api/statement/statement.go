@@ -2,6 +2,7 @@ package statement
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -25,6 +26,8 @@ type statement struct {
 }
 
 func GetStatement(w http.ResponseWriter, r *http.Request) {
+	log.Default().Printf("Received request")
+
 	//vars := mux.Vars(r)
 	mock := statement{
 		Saldo: balance{

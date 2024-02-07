@@ -2,6 +2,7 @@ package transactions
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -17,6 +18,8 @@ type balance struct {
 }
 
 func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
+	log.Default().Printf("Received request")
+
 	//vars := mux.Vars(r)
 	mock := balance{
 		Limite: 1000,

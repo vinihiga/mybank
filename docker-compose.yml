@@ -1,0 +1,42 @@
+services:
+  bank_service_01:
+    image: mybank:latest
+    hostname: bank_service_01
+    ports:
+      - "27001:27000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "200MB"
+
+  bank_service_02:
+    image: mybank:latest
+    hostname: bank_service_02
+    ports:
+      - "27002:27000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "200MB"
+
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - bank_service_01
+      - bank_service_02
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "10MB"
+
+networks:
+  default:
+    driver: bridge
+    name: nginx
