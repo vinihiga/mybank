@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-	"mybank/api/statement"
-	"mybank/api/transactions"
+	statementController "mybank/src/controllers/statement"
+	transactionsController "mybank/src/controllers/transactions"
 	"net/http"
 	"time"
 
@@ -15,8 +15,8 @@ func main() {
 	var port string = ":27000"
 
 	router := mux.NewRouter()
-	router.HandleFunc("/clientes/{id}/extrato", statement.GetStatement).Methods("GET")
-	router.HandleFunc("/clientes/{id}/transacoes", transactions.SetNewTransaction).Methods("POST")
+	router.HandleFunc("/clientes/{id}/extrato", statementController.GetStatement).Methods("GET")
+	router.HandleFunc("/clientes/{id}/transacoes", transactionsController.SetNewTransaction).Methods("POST")
 
 	server := &http.Server{
 		Handler:      router,

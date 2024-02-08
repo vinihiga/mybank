@@ -1,8 +1,9 @@
-package statement
+package statementController
 
 import (
 	"encoding/json"
 	"log"
+	databaseProvider "mybank/src/providers/database"
 	"net/http"
 	"time"
 )
@@ -25,6 +26,12 @@ type statement struct {
 	Ultimas_transacoes []transaction
 }
 
+type test struct {
+	Id    int
+	Nome  string
+	Saldo int
+}
+
 func GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
@@ -38,6 +45,18 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 		Ultimas_transacoes: make([]transaction, 0),
 	}
 
+	row := databaseProvider.Select("SELECT * FROM clientes;")
+
+	if row.Err() != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte{})
+		return
+	}
+
+	var t test
+	row.Scan(&t.Id, &t.Nome, &t.Saldo)
+
+	mock.Saldo.Limite = int64(t.Saldo)
 	response, error := json.Marshal(mock)
 
 	if error != nil {
