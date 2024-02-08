@@ -4,7 +4,9 @@ import (
 	"log"
 	statementController "mybank/src/controllers/statement"
 	transactionsController "mybank/src/controllers/transactions"
+	databaseProvider "mybank/src/providers/database"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -12,6 +14,14 @@ import (
 
 func main() {
 
+	// When we start, we must setup the database in order
+	// to use local instance or the cluster's one.
+	if len(os.Args) <= 1 {
+		databaseProvider.SetupLocalEnvironment()
+	}
+
+	// Setting-up endpoints and its respectively controllers.
+	// By default every endpoint will use port `27000` as decided below.
 	var port string = ":27000"
 
 	router := mux.NewRouter()
@@ -25,6 +35,7 @@ func main() {
 		ReadTimeout:  1 * time.Second,
 	}
 
+	// Booting the server
 	log.Default().Printf("Server starting at internal port %s!\n", server.Addr)
 
 	log.Fatal(server.ListenAndServe())

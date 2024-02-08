@@ -4,4 +4,4 @@ WORKDIR /app
 COPY . .
 RUN go build .
 EXPOSE 27000
-ENTRYPOINT [ "./mybank" ]
+ENTRYPOINT [ "./mybank", "--container-mode" ]
