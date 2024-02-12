@@ -2,6 +2,7 @@ package transactionsController
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	databaseProvider "mybank/src/providers/database"
@@ -11,14 +12,14 @@ import (
 )
 
 type Transaction struct {
-	Valor     int64  // Value in english
+	Valor     int    // Value in english
 	Tipo      string // Type in english (can be "C" for credit or "D" for debit)
 	Descricao string // Description in english
 }
 
 type Balance struct {
-	Limite int64 // Account "extra credit"
-	Saldo  int64 // Balance itself
+	Limite int // Account "extra credit"
+	Saldo  int // Balance itself
 }
 
 func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,6 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 
 	var clientId string = mux.Vars(r)["id"]
 	var newTransaction Transaction
-	var result Balance
 
 	parseErr := json.NewDecoder(r.Body).Decode(&newTransaction)
 
@@ -36,14 +36,12 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var sql = fmt.Sprintf(
-		"INSERT INTO transacoes (clienteid, tipo, valor) VALUES (%s, '%s', %d);",
+	insertErr := addNewTransaction(
 		clientId,
 		newTransaction.Tipo,
 		newTransaction.Valor,
+		newTransaction.Descricao,
 	)
-
-	var insertErr error = databaseProvider.Insert(sql)
 
 	if insertErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -51,16 +49,14 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sql = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Select(sql)
+	result, notFoundUserErr := getBalance(clientId)
 
-	if row.Err() != nil {
+	if notFoundUserErr != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte{})
 		return
 	}
 
-	row.Scan(&result.Limite, &result.Saldo)
 	response, error := json.Marshal(result)
 
 	if error != nil {
@@ -72,4 +68,43 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
+}
+
+func addNewTransaction(
+	clientId string,
+	transactionType string,
+	newValue int,
+	description string,
+) error {
+
+	var sql = fmt.Sprintf(
+		"INSERT INTO transacoes (clienteid, tipo, valor, descricao) VALUES (%s, '%s', %d, '%s');",
+		clientId,
+		transactionType,
+		newValue,
+		description,
+	)
+
+	var insertErr error = databaseProvider.Insert(sql)
+
+	if insertErr != nil {
+		return insertErr
+	}
+
+	return nil
+}
+
+func getBalance(clientId string) (*Balance, error) {
+	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
+	row := databaseProvider.Select(sql)
+
+	var result Balance
+
+	if row.Err() != nil {
+		return nil, errors.New("couldn't find desired user")
+	}
+
+	row.Scan(&result.Limite, &result.Saldo)
+
+	return &result, nil
 }

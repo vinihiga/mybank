@@ -16,6 +16,14 @@ func Select(query string) *sql.Row {
 	return db.QueryRow(query)
 }
 
+func SelectMultiple(query string) (*sql.Rows, error) {
+	if dbError != nil {
+		return nil, nil
+	}
+
+	return db.Query(query)
+}
+
 func Insert(query string) error {
 	_, queryErr := db.Exec(query)
 

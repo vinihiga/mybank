@@ -2,10 +2,14 @@ package statementController
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	databaseProvider "mybank/src/providers/database"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type Transaction struct {
@@ -26,38 +30,25 @@ type Statement struct {
 	Ultimas_transacoes []Transaction
 }
 
-type test struct {
-	Id    int
-	Nome  string
-	Saldo int
-}
-
 func GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
-	//vars := mux.Vars(r)
-	mock := Statement{
-		Saldo: Balance{
-			Total:        1,
-			Data_extrato: time.Now(),
-			Limite:       1,
-		},
-		Ultimas_transacoes: make([]Transaction, 0),
-	}
+	var clientId string = mux.Vars(r)["id"]
+	result := Statement{}
 
-	row := databaseProvider.Select("SELECT * FROM clientes;")
+	balance, notFoundUserErr := getBalance(clientId)
+	transactions := getLastTransactions(clientId)
 
-	if row.Err() != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if notFoundUserErr != nil {
+		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte{})
 		return
 	}
 
-	var t test
-	row.Scan(&t.Id, &t.Nome, &t.Saldo)
+	result.Saldo = *balance
+	result.Ultimas_transacoes = transactions
 
-	mock.Saldo.Limite = int64(t.Saldo)
-	response, error := json.Marshal(mock)
+	response, error := json.Marshal(result)
 
 	if error != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -68,4 +59,38 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(response)
+}
+
+func getBalance(clientId string) (*Balance, error) {
+	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
+	row := databaseProvider.Select(sql)
+
+	if row.Err() != nil {
+		return nil, errors.New("Couldn't find specified client")
+	}
+
+	var balance Balance = Balance{
+		Data_extrato: time.Now(),
+	}
+
+	row.Scan(&balance.Limite, &balance.Total)
+
+	return &balance, nil
+}
+
+func getLastTransactions(clientId string) []Transaction {
+	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
+	row, _ := databaseProvider.SelectMultiple(sql)
+
+	var transactions []Transaction = make([]Transaction, 0)
+
+	if row != nil {
+		for row.Next() {
+			var transaction = Transaction{}
+			row.Scan(nil, nil, &transaction.Tipo, &transaction.Valor, nil)
+			transactions = append(transactions, transaction)
+		}
+	}
+
+	return transactions
 }

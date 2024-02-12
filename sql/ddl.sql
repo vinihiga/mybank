@@ -11,8 +11,24 @@ CREATE TABLE transacoes (
     tipo VARCHAR(1) NOT NULL,
     valor INT NOT NULL,
     descricao varchar(50) NOT NULL,
+    data_extrato DATE NOT NULL,
     FOREIGN KEY (clienteId) REFERENCES clientes(id)
 );
+
+CREATE OR REPLACE FUNCTION inserir_transacao() 
+RETURNS TRIGGER LANGUAGE PLPGSQL AS $$
+BEGIN
+
+    NEW.data_extrato = NOW();
+    RETURN NEW;
+
+END;
+$$;
+
+CREATE TRIGGER inserir_transacao_trigger
+BEFORE INSERT ON transacoes
+FOR EACH ROW
+EXECUTE PROCEDURE inserir_transacao();
 
 -- TODO: handle non "c" (credit) or "debit" scenarios
 -- TODO: handle scenario where new balance can't be below limit ("extra credits" for Brazil banking system)
