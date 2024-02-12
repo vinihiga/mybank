@@ -7,6 +7,7 @@ import (
 	databaseProvider "mybank/src/providers/database"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,7 +17,7 @@ func main() {
 
 	// When we start, we must setup the database in order
 	// to use local instance or the cluster's one.
-	if len(os.Args) <= 1 {
+	if slices.Contains(os.Args, "--dev") {
 		databaseProvider.SetupLocalEnvironment()
 	}
 
