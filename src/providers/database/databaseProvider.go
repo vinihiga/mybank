@@ -16,6 +16,16 @@ func Select(query string) *sql.Row {
 	return db.QueryRow(query)
 }
 
+func Insert(query string) error {
+	_, queryErr := db.Exec(query)
+
+	if queryErr != nil {
+		return queryErr
+	}
+
+	return nil
+}
+
 func SetupLocalEnvironment() {
 	db, dbError = sql.Open("postgres", "host=localhost port=5432 dbname=test_db user=admin password=test sslmode=disable")
 }

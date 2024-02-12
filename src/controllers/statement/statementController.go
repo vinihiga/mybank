@@ -8,22 +8,22 @@ import (
 	"time"
 )
 
-type transaction struct {
+type Transaction struct {
 	Valor        int64
 	Tipo         rune
 	Descricao    string
 	Realizada_em time.Time
 }
 
-type balance struct {
+type Balance struct {
 	Total        int64
 	Data_extrato time.Time
 	Limite       int64
 }
 
-type statement struct {
-	Saldo              balance
-	Ultimas_transacoes []transaction
+type Statement struct {
+	Saldo              Balance
+	Ultimas_transacoes []Transaction
 }
 
 type test struct {
@@ -36,13 +36,13 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
 	//vars := mux.Vars(r)
-	mock := statement{
-		Saldo: balance{
+	mock := Statement{
+		Saldo: Balance{
 			Total:        1,
 			Data_extrato: time.Now(),
 			Limite:       1,
 		},
-		Ultimas_transacoes: make([]transaction, 0),
+		Ultimas_transacoes: make([]Transaction, 0),
 	}
 
 	row := databaseProvider.Select("SELECT * FROM clientes;")
