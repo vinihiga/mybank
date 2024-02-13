@@ -36,10 +36,10 @@ func main() {
 		ReadTimeout:  1 * time.Second,
 	}
 
-	// Booting the server
+	// Booting the server.
+	// We are logging the port to help while we instantiate
+	// with docker-compose or clusterization technique.
 	log.Default().Printf("Server starting at internal port %s!\n", server.Addr)
-
 	log.Fatal(server.ListenAndServe())
-
 	log.Default().Printf("Server started!\n")
 }

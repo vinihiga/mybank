@@ -9,23 +9,19 @@ import (
 var db, dbError = sql.Open("postgres", "host=db port=5432 dbname=test_db user=admin password=test sslmode=disable")
 
 func Select(query string) *sql.Row {
-	if dbError != nil {
-		return nil
-	}
-
+	checkDatabaseReliability()
 	return db.QueryRow(query)
 }
 
 func SelectMultiple(query string) (*sql.Rows, error) {
-	if dbError != nil {
-		return nil, nil
-	}
-
+	checkDatabaseReliability()
 	return db.Query(query)
 }
 
 func Insert(query string) error {
 	_, queryErr := db.Exec(query)
+
+	checkDatabaseReliability()
 
 	if queryErr != nil {
 		return queryErr
@@ -36,4 +32,12 @@ func Insert(query string) error {
 
 func SetupLocalEnvironment() {
 	db, dbError = sql.Open("postgres", "host=localhost port=5432 dbname=test_db user=admin password=test sslmode=disable")
+	checkDatabaseReliability()
+}
+
+func checkDatabaseReliability() {
+	if db.Ping() != nil {
+		db.Close()
+		panic("couldn't instantiate database connection!!!")
+	}
 }
