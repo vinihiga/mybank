@@ -12,25 +12,32 @@ import (
 )
 
 type Transaction struct {
-	Valor     int    // Value in english
-	Tipo      string // Type in english (can be "C" for credit or "D" for debit)
-	Descricao string // Description in english
+	Valor     int    `json:"valor"`
+	Tipo      string `json:"tipo"`
+	Descricao string `json:"descricao"`
 }
 
 type Balance struct {
-	Limite int // Account "extra credit"
-	Saldo  int // Balance itself
+	id     int
+	nome   string
+	Limite int `json:"limite"`
+	Saldo  int `json:"saldo"`
 }
 
+// Adds the new transaction into dabase.
+// PARAMETERS:
+// w - The Responder Writer itself.
+// r* - The pointer of the request where it'll be parsed as JSON.
 func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
 	var clientId string = mux.Vars(r)["id"]
 	var newTransaction Transaction
 
-	parseErr := json.NewDecoder(r.Body).Decode(&newTransaction)
-
-	if parseErr != nil {
+	// First we need to decode the request if fits
+	// our business rules, otherwise we should
+	// return an error code.
+	if parseErr := json.NewDecoder(r.Body).Decode(&newTransaction); parseErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte{})
 		return
@@ -49,6 +56,9 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Now we need to get the data, because
+	// we need to return the actual balance and
+	// "limite" (credits).
 	result, notFoundUserErr := getBalance(clientId)
 
 	if notFoundUserErr != nil {
@@ -57,9 +67,9 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, error := json.Marshal(result)
+	response, jsonError := json.Marshal(result)
 
-	if error != nil {
+	if jsonError != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte{})
 		return
@@ -70,6 +80,12 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// Adds new transaction into the database.
+// PARAMETERS:
+// clientId - The client's id
+// transactionType - The values can be 'c' or 'd'. Where 'c' is credit and 'd' is debit.
+// newValue - The value of the transaction.
+// description - The description of the transaction.
 func addNewTransaction(
 	clientId string,
 	transactionType string,
@@ -94,6 +110,12 @@ func addNewTransaction(
 	return nil
 }
 
+// Gets the current balance given the Client's ID.
+// PARAMETERS:
+// clientId - The client's id.
+// RETURNS:
+// *Balance - The balance's values, like limit and total.
+// error - In case of the query failed or couldn't scan the data.
 func getBalance(clientId string) (*Balance, error) {
 	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
 	row := databaseProvider.Select(sql)
@@ -104,7 +126,9 @@ func getBalance(clientId string) (*Balance, error) {
 		return nil, errors.New("couldn't find desired user")
 	}
 
-	row.Scan(&result.Limite, &result.Saldo)
+	if scanErr := row.Scan(&result.id, &result.nome, &result.Limite, &result.Saldo); scanErr != nil {
+		return nil, errors.New("couldn't scan data")
+	}
 
 	return &result, nil
 }

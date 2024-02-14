@@ -11,7 +11,7 @@ CREATE TABLE transacoes (
     tipo VARCHAR(1) NOT NULL,
     valor INT NOT NULL,
     descricao varchar(50) NOT NULL,
-    data_extrato DATE NOT NULL,
+    data_extrato TIME NOT NULL,
     FOREIGN KEY (clienteId) REFERENCES clientes(id)
 );
 

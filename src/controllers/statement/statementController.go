@@ -1,6 +1,7 @@
 package statementController
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,23 +14,31 @@ import (
 )
 
 type Transaction struct {
-	Valor        int64
-	Tipo         rune
-	Descricao    string
-	Realizada_em time.Time
+	id           int
+	clienteId    int
+	Tipo         string    `json:"tipo"`
+	Valor        int       `json:"valor"`
+	Descricao    string    `json:"descricao"`
+	Data_extrato time.Time `json:"realizada_em"`
 }
 
 type Balance struct {
-	Total        int64
-	Data_extrato time.Time
-	Limite       int64
+	id           int
+	nome         string
+	Saldo        int       `json:"total"`
+	Limite       int       `json:"limite"`
+	Data_extrato time.Time `json:"data_extrato"`
 }
 
 type Statement struct {
-	Saldo              Balance
-	Ultimas_transacoes []Transaction
+	Saldo              Balance       `json:"saldo"`
+	Ultimas_transacoes []Transaction `json:"ultimas_transacoes"`
 }
 
+// Gets the statement given a client id by passing into the url's query parameter.
+// PARAMETERS:
+// w - Response Writer.
+// r* - The client's request that will be parsed into JSON.
 func GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
@@ -61,35 +70,64 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 	w.Write(response)
 }
 
+// Gets the current balance given the "clientId" (clienteId).
+// PARAMETERS:
+// - clientId: The client's ID.
+// RETURNS:
+// - *Balance: The result itself
+// - error: In case of failed query.
 func getBalance(clientId string) (*Balance, error) {
-	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Select(sql)
+	var query string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
+	row := databaseProvider.Select(query)
 
-	if row.Err() != nil {
-		return nil, errors.New("Couldn't find specified client")
+	if row.Err() == sql.ErrNoRows {
+		return nil, errors.New("couldn't find specified client")
 	}
 
 	var balance Balance = Balance{
 		Data_extrato: time.Now(),
 	}
 
-	row.Scan(&balance.Limite, &balance.Total)
+	row.Scan(&balance.id, &balance.nome, &balance.Limite, &balance.Saldo)
 
 	return &balance, nil
 }
 
+// Gets all transactions given the "clientId" (clienteId).
+// PARAMETERS:
+// - clientId: The client's ID.
+// RETURNS:
+// - []Transaction: Empty in case not found or with the respectively values.
 func getLastTransactions(clientId string) []Transaction {
 	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
-	row, _ := databaseProvider.SelectMultiple(sql)
-
+	rows, queryErr := databaseProvider.SelectMultiple(sql)
 	var transactions []Transaction = make([]Transaction, 0)
 
-	if row != nil {
-		for row.Next() {
-			var transaction = Transaction{}
-			row.Scan(nil, nil, &transaction.Tipo, &transaction.Valor, nil)
-			transactions = append(transactions, transaction)
+	if queryErr != nil {
+		return transactions
+	}
+
+	for rows.Next() {
+		var transaction Transaction
+		scanErr := rows.Scan(
+			&transaction.id,
+			&transaction.clienteId,
+			&transaction.Tipo,
+			&transaction.Valor,
+			&transaction.Descricao,
+			&transaction.Data_extrato,
+		)
+
+		if scanErr != nil {
+			log.Printf(scanErr.Error())
+			continue
 		}
+
+		transactions = append(transactions, transaction)
+	}
+
+	if rows.Err() != nil {
+		return transactions
 	}
 
 	return transactions
