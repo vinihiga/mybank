@@ -18,7 +18,9 @@ func main() {
 	// When we start, we must setup the database in order
 	// to use local instance or the cluster's one.
 	if slices.Contains(os.Args, "--dev") {
-		databaseProvider.SetupLocalEnvironment()
+		databaseProvider.Shared.SetupLocalEnvironment()
+	} else {
+		databaseProvider.Shared.SetupNormalEnvironment()
 	}
 
 	// Setting-up endpoints and its respectively controllers.

@@ -125,7 +125,7 @@ func addNewTransaction(
 		description,
 	)
 
-	var insertErr error = databaseProvider.Insert(sql)
+	var insertErr error = databaseProvider.Shared.Insert(sql)
 
 	if insertErr != nil {
 		return insertErr
@@ -142,7 +142,7 @@ func addNewTransaction(
 // error - In case of the query failed or couldn't scan the data.
 func getBalance(clientId string) (*Balance, error) {
 	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Select(sql)
+	row := databaseProvider.Shared.Select(sql)
 
 	var result Balance
 

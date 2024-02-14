@@ -78,7 +78,7 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 // - error: In case of failed query.
 func getBalance(clientId string) (*Balance, error) {
 	var query string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Select(query)
+	row := databaseProvider.Shared.Select(query)
 
 	if row.Err() == sql.ErrNoRows {
 		return nil, errors.New("couldn't find specified client")
@@ -100,7 +100,7 @@ func getBalance(clientId string) (*Balance, error) {
 // - []Transaction: Empty in case not found or with the respectively values.
 func getLastTransactions(clientId string) []Transaction {
 	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
-	rows, queryErr := databaseProvider.SelectMultiple(sql)
+	rows, queryErr := databaseProvider.Shared.SelectMultiple(sql)
 	var transactions []Transaction = make([]Transaction, 0)
 
 	if queryErr != nil {

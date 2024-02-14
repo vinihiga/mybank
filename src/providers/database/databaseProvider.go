@@ -6,22 +6,41 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var db, dbError = sql.Open("postgres", "host=db port=5432 dbname=test_db user=admin password=test sslmode=disable")
+var Shared DatabaseProvider = databaseProvider{}
 
-func Select(query string) *sql.Row {
-	checkDatabaseReliability()
-	return db.QueryRow(query)
+type DatabaseProvider interface {
+	SetupNormalEnvironment()
+	SetupLocalEnvironment()
+
+	Select(query string) *sql.Row
+	SelectMultiple(query string) (*sql.Rows, error)
+	Insert(query string) error
 }
 
-func SelectMultiple(query string) (*sql.Rows, error) {
-	checkDatabaseReliability()
-	return db.Query(query)
+type databaseProvider struct {
+	db      *sql.DB
+	dbError error
 }
 
-func Insert(query string) error {
-	_, queryErr := db.Exec(query)
+func (dp databaseProvider) SetupNormalEnvironment() {
+	dp.db, dp.dbError = sql.Open("postgres", "host=db port=5432 dbname=test_db user=admin password=test sslmode=disable")
+	dp.checkDatabaseReliability()
+}
 
-	checkDatabaseReliability()
+func (dp databaseProvider) SetupLocalEnvironment() {
+	dp.db, dp.dbError = sql.Open("postgres", "host=localhost port=5432 dbname=test_db user=admin password=test sslmode=disable")
+	dp.checkDatabaseReliability()
+}
+
+// Insert implements DatabaseProvider.
+func (dp databaseProvider) Insert(query string) error {
+	if dp.db == nil {
+		panic("database not instantiated")
+	}
+
+	_, queryErr := dp.db.Exec(query)
+
+	dp.checkDatabaseReliability()
 
 	if queryErr != nil {
 		return queryErr
@@ -30,14 +49,29 @@ func Insert(query string) error {
 	return nil
 }
 
-func SetupLocalEnvironment() {
-	db, dbError = sql.Open("postgres", "host=localhost port=5432 dbname=test_db user=admin password=test sslmode=disable")
-	checkDatabaseReliability()
+// Select implements DatabaseProvider.
+func (dp databaseProvider) Select(query string) *sql.Row {
+	if dp.db == nil {
+		panic("database not instantiated")
+	}
+
+	dp.checkDatabaseReliability()
+	return dp.db.QueryRow(query)
 }
 
-func checkDatabaseReliability() {
-	if db.Ping() != nil {
-		db.Close()
+// SelectMultiple implements DatabaseProvider.
+func (dp databaseProvider) SelectMultiple(query string) (*sql.Rows, error) {
+	if dp.db == nil {
+		panic("database not instantiated")
+	}
+
+	dp.checkDatabaseReliability()
+	return dp.db.Query(query)
+}
+
+func (dp databaseProvider) checkDatabaseReliability() {
+	if dp.db.Ping() != nil {
+		dp.db.Close()
 		panic("couldn't instantiate database connection!!!")
 	}
 }
