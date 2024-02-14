@@ -7,9 +7,13 @@ import (
 	"log"
 	databaseProvider "mybank/src/providers/database"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
+
+const creditTransactionType string = "c"
+const debtTransactionType string = "d"
 
 type Transaction struct {
 	Valor     int    `json:"valor"`
@@ -34,18 +38,38 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	var clientId string = mux.Vars(r)["id"]
 	var newTransaction Transaction
 
-	// First we need to decode the request if fits
-	// our business rules, otherwise we should
-	// return an error code.
+	// First we need to verify if user can
+	// transfer "credits" to outside of his/her
+	// account.
+	//
+	// To do this, we need to decode the request
+	// and check if it fits our business rules,
+	// otherwise we should return an error code.
 	if parseErr := json.NewDecoder(r.Body).Decode(&newTransaction); parseErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte{})
 		return
 	}
 
+	result, notFoundUserErr := getBalance(clientId)
+	var transaction string = strings.ToLower(newTransaction.Tipo)
+	var isNewTransactionAboveLimit = newTransaction.Valor > (result.Saldo + result.Limite)
+
+	if notFoundUserErr != nil {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte{})
+		return
+	} else if transaction == debtTransactionType && isNewTransactionAboveLimit {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte{})
+		return
+	}
+
+	// Inserting the new transaction into the
+	// database.
 	insertErr := addNewTransaction(
 		clientId,
-		newTransaction.Tipo,
+		strings.ToLower(newTransaction.Tipo),
 		newTransaction.Valor,
 		newTransaction.Descricao,
 	)
@@ -59,7 +83,7 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	// Now we need to get the data, because
 	// we need to return the actual balance and
 	// "limite" (credits).
-	result, notFoundUserErr := getBalance(clientId)
+	result, notFoundUserErr = getBalance(clientId)
 
 	if notFoundUserErr != nil {
 		w.WriteHeader(http.StatusNotFound)
