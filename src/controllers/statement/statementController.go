@@ -108,7 +108,7 @@ func (controller *StatementController) getBalance(clientId string) (*Balance, er
 // - []Transaction: Empty in case not found or with the respectively values.
 func (controller *StatementController) getLastTransactions(clientId string) []Transaction {
 	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
-	rows, queryErr := controller.DatabaseProvider.SelectMultiple(sql)
+	rows, queryErr := controller.DatabaseProvider.Select(sql)
 	var transactions []Transaction = make([]Transaction, 0)
 
 	if queryErr != nil {
@@ -127,7 +127,7 @@ func (controller *StatementController) getLastTransactions(clientId string) []Tr
 		)
 
 		if scanErr != nil {
-			log.Printf(scanErr.Error())
+			log.Print(scanErr.Error())
 			continue
 		}
 

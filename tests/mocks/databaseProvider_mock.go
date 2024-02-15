@@ -34,19 +34,6 @@ func (dp *DatabaseProviderMock) Select(query string) (*sql.Rows, error) {
 	return db.Query(query)
 }
 
-func (dp *DatabaseProviderMock) SelectMultiple(query string) (*sql.Rows, error) {
-	db, mock, _ := sqlmock.New()
-	loweredQuery := strings.ToLower(query)
-
-	if strings.Contains(loweredQuery, "transacoes") {
-		rows := sqlmock.NewRows([]string{"id", "clienteid", "tipo", "valor", "descricao", "data_extrato"})
-		rows = rows.AddRow(1, 1, "c", 500, "test", "00:00:00.000000")
-		mock.ExpectQuery("^SELECT (.+)").WillReturnRows(rows)
-	}
-
-	return db.Query(query)
-}
-
 func (dp *DatabaseProviderMock) Insert(query string) error {
 	return nil
 }
