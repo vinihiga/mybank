@@ -40,4 +40,7 @@ func TestSetNewTransaction(t *testing.T) {
 	defer res.Body.Close()
 
 	// Then
+	if res.StatusCode != http.StatusOK {
+		t.Fail()
+	}
 }

@@ -10,7 +10,7 @@ type IDatabaseProvider interface {
 	SetupNormalEnvironment()
 	SetupLocalEnvironment()
 
-	Select(query string) *sql.Row
+	Select(query string) (*sql.Rows, error)
 	SelectMultiple(query string) (*sql.Rows, error)
 	Insert(query string) error
 }
@@ -48,13 +48,13 @@ func (dp *DatabaseProvider) Insert(query string) error {
 }
 
 // Select implements DatabaseProvider.
-func (dp *DatabaseProvider) Select(query string) *sql.Row {
+func (dp *DatabaseProvider) Select(query string) (*sql.Rows, error) {
 	if dp.db == nil {
 		panic("database not instantiated")
 	}
 
 	dp.checkDatabaseReliability()
-	return dp.db.QueryRow(query)
+	return dp.db.Query(query)
 }
 
 // SelectMultiple implements DatabaseProvider.

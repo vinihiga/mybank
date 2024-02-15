@@ -82,9 +82,9 @@ func (controller *StatementController) GetStatement(w http.ResponseWriter, r *ht
 // - error: In case of failed query.
 func (controller *StatementController) getBalance(clientId string) (*Balance, error) {
 	var query string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := controller.DatabaseProvider.Select(query)
+	rows, queryErr := controller.DatabaseProvider.Select(query)
 
-	if row.Err() == sql.ErrNoRows {
+	if queryErr == sql.ErrNoRows {
 		return nil, errors.New("couldn't find specified client")
 	}
 
@@ -92,7 +92,11 @@ func (controller *StatementController) getBalance(clientId string) (*Balance, er
 		Data_extrato: time.Now(),
 	}
 
-	row.Scan(&balance.id, &balance.nome, &balance.Limite, &balance.Saldo)
+	if !rows.Next() {
+		return nil, nil
+	}
+
+	rows.Scan(&balance.id, &balance.nome, &balance.Limite, &balance.Saldo)
 
 	return &balance, nil
 }

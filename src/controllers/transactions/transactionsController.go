@@ -146,15 +146,15 @@ func (controller *TransactionsController) addNewTransaction(
 // error - In case of the query failed or couldn't scan the data.
 func (controller *TransactionsController) getBalance(clientId string) (*Balance, error) {
 	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := controller.DatabaseProvider.Select(sql)
+	rows, queryErr := controller.DatabaseProvider.Select(sql)
 
 	var result Balance
 
-	if row.Err() != nil {
+	if queryErr != nil {
 		return nil, errors.New("couldn't find desired user")
-	}
-
-	if scanErr := row.Scan(&result.id, &result.nome, &result.Limite, &result.Saldo); scanErr != nil {
+	} else if !rows.Next() {
+		return nil, errors.New("couldn't find desired user")
+	} else if scanErr := rows.Scan(&result.id, &result.nome, &result.Limite, &result.Saldo); scanErr != nil {
 		return nil, errors.New("couldn't scan data")
 	}
 
