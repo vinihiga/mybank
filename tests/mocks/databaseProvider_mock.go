@@ -17,7 +17,7 @@ func (dp *DatabaseProviderMock) SetupLocalEnvironment() {
 	// Intentionally not implemented
 }
 
-func (dp *DatabaseProviderMock) Select(query string) (*sql.Rows, error) {
+func (dp *DatabaseProviderMock) Select(query string, args ...any) (*sql.Rows, error) {
 	db, mock, _ := sqlmock.New()
 	loweredQuery := strings.ToLower(query)
 
@@ -34,6 +34,6 @@ func (dp *DatabaseProviderMock) Select(query string) (*sql.Rows, error) {
 	return db.Query(query)
 }
 
-func (dp *DatabaseProviderMock) Insert(query string) error {
+func (dp *DatabaseProviderMock) Insert(query string, args ...any) error {
 	return nil
 }

@@ -10,8 +10,8 @@ type IDatabaseProvider interface {
 	SetupNormalEnvironment()
 	SetupLocalEnvironment()
 
-	Select(query string) (*sql.Rows, error)
-	Insert(query string) error
+	Select(query string, args ...any) (*sql.Rows, error)
+	Insert(query string, args ...any) error
 }
 
 type DatabaseProvider struct {
@@ -30,14 +30,9 @@ func (dp *DatabaseProvider) SetupLocalEnvironment() {
 }
 
 // Insert implements DatabaseProvider.
-func (dp *DatabaseProvider) Insert(query string) error {
-	if dp.db == nil {
-		panic("database not instantiated")
-	}
-
-	_, queryErr := dp.db.Exec(query)
-
+func (dp *DatabaseProvider) Insert(query string, args ...any) error {
 	dp.checkDatabaseReliability()
+	_, queryErr := dp.db.Exec(query, args...)
 
 	if queryErr != nil {
 		return queryErr
@@ -47,17 +42,15 @@ func (dp *DatabaseProvider) Insert(query string) error {
 }
 
 // Select implements DatabaseProvider.
-func (dp *DatabaseProvider) Select(query string) (*sql.Rows, error) {
-	if dp.db == nil {
-		panic("database not instantiated")
-	}
-
+func (dp *DatabaseProvider) Select(query string, args ...any) (*sql.Rows, error) {
 	dp.checkDatabaseReliability()
-	return dp.db.Query(query)
+	return dp.db.Query(query, args...)
 }
 
 func (dp *DatabaseProvider) checkDatabaseReliability() {
-	if dp.db.Ping() != nil {
+	if dp.db == nil {
+		panic("database not instantiated")
+	} else if dp.db.Ping() != nil {
 		dp.db.Close()
 		panic("couldn't instantiate database connection!!!")
 	}

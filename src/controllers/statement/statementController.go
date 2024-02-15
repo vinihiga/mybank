@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	databaseProvider "mybank/src/providers/database"
 	"net/http"
@@ -81,8 +80,7 @@ func (controller *StatementController) GetStatement(w http.ResponseWriter, r *ht
 // - *Balance: The result itself
 // - error: In case of failed query.
 func (controller *StatementController) getBalance(clientId string) (*Balance, error) {
-	var query string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	rows, queryErr := controller.DatabaseProvider.Select(query)
+	rows, queryErr := controller.DatabaseProvider.Select("SELECT * FROM clientes WHERE id = $1", clientId)
 
 	if queryErr == sql.ErrNoRows {
 		return nil, errors.New("couldn't find specified client")
@@ -107,8 +105,7 @@ func (controller *StatementController) getBalance(clientId string) (*Balance, er
 // RETURNS:
 // - []Transaction: Empty in case not found or with the respectively values.
 func (controller *StatementController) getLastTransactions(clientId string) []Transaction {
-	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
-	rows, queryErr := controller.DatabaseProvider.Select(sql)
+	rows, queryErr := controller.DatabaseProvider.Select("SELECT * FROM transacoes WHERE clienteid = $1", clientId)
 	var transactions []Transaction = make([]Transaction, 0)
 
 	if queryErr != nil {

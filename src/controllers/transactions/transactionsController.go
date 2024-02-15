@@ -3,7 +3,6 @@ package transactionsController
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	databaseProvider "mybank/src/providers/database"
 	"net/http"
@@ -121,15 +120,13 @@ func (controller *TransactionsController) addNewTransaction(
 	description string,
 ) error {
 
-	var sql = fmt.Sprintf(
-		"INSERT INTO transacoes (clienteid, tipo, valor, descricao) VALUES (%s, '%s', %d, '%s');",
+	var insertErr error = controller.DatabaseProvider.Insert(
+		"INSERT INTO transacoes (clienteid, tipo, valor, descricao) VALUES ($1, $2, $3, $4)",
 		clientId,
 		transactionType,
 		newValue,
 		description,
 	)
-
-	var insertErr error = controller.DatabaseProvider.Insert(sql)
 
 	if insertErr != nil {
 		return insertErr
@@ -145,8 +142,7 @@ func (controller *TransactionsController) addNewTransaction(
 // *Balance - The balance's values, like limit and total.
 // error - In case of the query failed or couldn't scan the data.
 func (controller *TransactionsController) getBalance(clientId string) (*Balance, error) {
-	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	rows, queryErr := controller.DatabaseProvider.Select(sql)
+	rows, queryErr := controller.DatabaseProvider.Select("SELECT * FROM clientes WHERE id = $1", clientId)
 
 	var result Balance
 
