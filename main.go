@@ -17,10 +17,12 @@ func main() {
 
 	// When we start, we must setup the database in order
 	// to use local instance or the cluster's one.
+	var databaseProvider databaseProvider.IDatabaseProvider = &databaseProvider.DatabaseProvider{}
+
 	if slices.Contains(os.Args, "--dev") {
-		databaseProvider.Shared.SetupLocalEnvironment()
+		databaseProvider.SetupLocalEnvironment()
 	} else {
-		databaseProvider.Shared.SetupNormalEnvironment()
+		databaseProvider.SetupNormalEnvironment()
 	}
 
 	// Setting-up endpoints and its respectively controllers.
@@ -28,6 +30,13 @@ func main() {
 	var port string = ":27000"
 
 	router := mux.NewRouter()
+
+	var transactionsController transactionsController.TransactionsController
+	transactionsController.DatabaseProvider = databaseProvider
+
+	var statementController statementController.StatementController
+	statementController.DatabaseProvider = databaseProvider
+
 	router.HandleFunc("/clientes/{id}/extrato", statementController.GetStatement).Methods("GET")
 	router.HandleFunc("/clientes/{id}/transacoes", transactionsController.SetNewTransaction).Methods("POST")
 

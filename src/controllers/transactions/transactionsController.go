@@ -28,11 +28,15 @@ type Balance struct {
 	Saldo  int `json:"saldo"`
 }
 
+type TransactionsController struct {
+	DatabaseProvider databaseProvider.IDatabaseProvider
+}
+
 // Adds the new transaction into dabase.
 // PARAMETERS:
 // w - The Responder Writer itself.
 // r* - The pointer of the request where it'll be parsed as JSON.
-func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
+func (controller *TransactionsController) SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
 	var clientId string = mux.Vars(r)["id"]
@@ -51,7 +55,7 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, notFoundUserErr := getBalance(clientId)
+	result, notFoundUserErr := controller.getBalance(clientId)
 	var transaction string = strings.ToLower(newTransaction.Tipo)
 	var isNewTransactionAboveLimit = newTransaction.Valor > (result.Saldo + result.Limite)
 
@@ -67,7 +71,7 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 
 	// Inserting the new transaction into the
 	// database.
-	insertErr := addNewTransaction(
+	insertErr := controller.addNewTransaction(
 		clientId,
 		strings.ToLower(newTransaction.Tipo),
 		newTransaction.Valor,
@@ -83,7 +87,7 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	// Now we need to get the data, because
 	// we need to return the actual balance and
 	// "limite" (credits).
-	result, notFoundUserErr = getBalance(clientId)
+	result, notFoundUserErr = controller.getBalance(clientId)
 
 	if notFoundUserErr != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -110,7 +114,7 @@ func SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 // transactionType - The values can be 'c' or 'd'. Where 'c' is credit and 'd' is debit.
 // newValue - The value of the transaction.
 // description - The description of the transaction.
-func addNewTransaction(
+func (controller *TransactionsController) addNewTransaction(
 	clientId string,
 	transactionType string,
 	newValue int,
@@ -125,7 +129,7 @@ func addNewTransaction(
 		description,
 	)
 
-	var insertErr error = databaseProvider.Shared.Insert(sql)
+	var insertErr error = controller.DatabaseProvider.Insert(sql)
 
 	if insertErr != nil {
 		return insertErr
@@ -140,9 +144,9 @@ func addNewTransaction(
 // RETURNS:
 // *Balance - The balance's values, like limit and total.
 // error - In case of the query failed or couldn't scan the data.
-func getBalance(clientId string) (*Balance, error) {
+func (controller *TransactionsController) getBalance(clientId string) (*Balance, error) {
 	var sql string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Shared.Select(sql)
+	row := controller.DatabaseProvider.Select(sql)
 
 	var result Balance
 

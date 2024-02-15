@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	transactionsController "mybank/src/controllers/transactions"
+	"mybank/tests/mocks"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,7 @@ type transaction_mock struct {
 }
 
 func TestSetNewTransaction(t *testing.T) {
+	// Given
 	var mock = transaction_mock{
 		Valor:     1000,
 		Tipo:      "c",
@@ -28,8 +30,14 @@ func TestSetNewTransaction(t *testing.T) {
 	var req = httptest.NewRequest(http.MethodPost, "/clientes/1/transacoes", &buffer)
 	var writer = httptest.NewRecorder()
 
-	transactionsController.SetNewTransaction(writer, req)
+	var sut = transactionsController.TransactionsController{}
+	sut.DatabaseProvider = &mocks.DatabaseProviderMock{}
+
+	// When
+	sut.SetNewTransaction(writer, req)
 
 	res := writer.Result()
 	defer res.Body.Close()
+
+	// Then
 }

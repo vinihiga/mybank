@@ -35,18 +35,22 @@ type Statement struct {
 	Ultimas_transacoes []Transaction `json:"ultimas_transacoes"`
 }
 
+type StatementController struct {
+	DatabaseProvider databaseProvider.IDatabaseProvider
+}
+
 // Gets the statement given a client id by passing into the url's query parameter.
 // PARAMETERS:
 // w - Response Writer.
 // r* - The client's request that will be parsed into JSON.
-func GetStatement(w http.ResponseWriter, r *http.Request) {
+func (controller *StatementController) GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
 	var clientId string = mux.Vars(r)["id"]
 	result := Statement{}
 
-	balance, notFoundUserErr := getBalance(clientId)
-	transactions := getLastTransactions(clientId)
+	balance, notFoundUserErr := controller.getBalance(clientId)
+	transactions := controller.getLastTransactions(clientId)
 
 	if notFoundUserErr != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -76,9 +80,9 @@ func GetStatement(w http.ResponseWriter, r *http.Request) {
 // RETURNS:
 // - *Balance: The result itself
 // - error: In case of failed query.
-func getBalance(clientId string) (*Balance, error) {
+func (controller *StatementController) getBalance(clientId string) (*Balance, error) {
 	var query string = fmt.Sprintf("SELECT * FROM clientes WHERE id = %s;", clientId)
-	row := databaseProvider.Shared.Select(query)
+	row := controller.DatabaseProvider.Select(query)
 
 	if row.Err() == sql.ErrNoRows {
 		return nil, errors.New("couldn't find specified client")
@@ -98,9 +102,9 @@ func getBalance(clientId string) (*Balance, error) {
 // - clientId: The client's ID.
 // RETURNS:
 // - []Transaction: Empty in case not found or with the respectively values.
-func getLastTransactions(clientId string) []Transaction {
+func (controller *StatementController) getLastTransactions(clientId string) []Transaction {
 	var sql string = fmt.Sprintf("SELECT * FROM transacoes WHERE clienteid = %s;", clientId)
-	rows, queryErr := databaseProvider.Shared.SelectMultiple(sql)
+	rows, queryErr := controller.DatabaseProvider.SelectMultiple(sql)
 	var transactions []Transaction = make([]Transaction, 0)
 
 	if queryErr != nil {

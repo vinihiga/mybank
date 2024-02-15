@@ -6,9 +6,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var Shared DatabaseProvider = databaseProvider{}
-
-type DatabaseProvider interface {
+type IDatabaseProvider interface {
 	SetupNormalEnvironment()
 	SetupLocalEnvironment()
 
@@ -17,23 +15,23 @@ type DatabaseProvider interface {
 	Insert(query string) error
 }
 
-type databaseProvider struct {
+type DatabaseProvider struct {
 	db      *sql.DB
 	dbError error
 }
 
-func (dp databaseProvider) SetupNormalEnvironment() {
+func (dp *DatabaseProvider) SetupNormalEnvironment() {
 	dp.db, dp.dbError = sql.Open("postgres", "host=db port=5432 dbname=test_db user=admin password=test sslmode=disable")
 	dp.checkDatabaseReliability()
 }
 
-func (dp databaseProvider) SetupLocalEnvironment() {
+func (dp *DatabaseProvider) SetupLocalEnvironment() {
 	dp.db, dp.dbError = sql.Open("postgres", "host=localhost port=5432 dbname=test_db user=admin password=test sslmode=disable")
 	dp.checkDatabaseReliability()
 }
 
 // Insert implements DatabaseProvider.
-func (dp databaseProvider) Insert(query string) error {
+func (dp *DatabaseProvider) Insert(query string) error {
 	if dp.db == nil {
 		panic("database not instantiated")
 	}
@@ -50,7 +48,7 @@ func (dp databaseProvider) Insert(query string) error {
 }
 
 // Select implements DatabaseProvider.
-func (dp databaseProvider) Select(query string) *sql.Row {
+func (dp *DatabaseProvider) Select(query string) *sql.Row {
 	if dp.db == nil {
 		panic("database not instantiated")
 	}
@@ -60,7 +58,7 @@ func (dp databaseProvider) Select(query string) *sql.Row {
 }
 
 // SelectMultiple implements DatabaseProvider.
-func (dp databaseProvider) SelectMultiple(query string) (*sql.Rows, error) {
+func (dp *DatabaseProvider) SelectMultiple(query string) (*sql.Rows, error) {
 	if dp.db == nil {
 		panic("database not instantiated")
 	}
@@ -69,7 +67,7 @@ func (dp databaseProvider) SelectMultiple(query string) (*sql.Rows, error) {
 	return dp.db.Query(query)
 }
 
-func (dp databaseProvider) checkDatabaseReliability() {
+func (dp *DatabaseProvider) checkDatabaseReliability() {
 	if dp.db.Ping() != nil {
 		dp.db.Close()
 		panic("couldn't instantiate database connection!!!")
