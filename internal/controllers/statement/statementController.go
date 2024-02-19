@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	databaseProvider "mybank/src/providers/database"
+	databaseProvider "mybank/internal/providers/database"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 type Transaction struct {
@@ -45,7 +43,7 @@ type StatementController struct {
 func (controller *StatementController) GetStatement(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
-	var clientId string = mux.Vars(r)["id"]
+	var clientId string = r.PathValue("id")
 	result := Statement{}
 
 	balance, notFoundUserErr := controller.getBalance(clientId)

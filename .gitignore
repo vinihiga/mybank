@@ -73,5 +73,6 @@ $RECYCLE.BIN/
 tmp/*
 *.log
 *.jtl
+*/tmp/
 
 # End of https://www.toptal.com/developers/gitignore/api/go,visualstudiocode,windows

@@ -2,15 +2,12 @@ package main
 
 import (
 	"log"
-	statementController "mybank/src/controllers/statement"
-	transactionsController "mybank/src/controllers/transactions"
-	databaseProvider "mybank/src/providers/database"
+	statementController "mybank/internal/controllers/statement"
+	transactionsController "mybank/internal/controllers/transactions"
+	databaseProvider "mybank/internal/providers/database"
 	"net/http"
 	"os"
 	"slices"
-	"time"
-
-	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -27,9 +24,9 @@ func main() {
 
 	// Setting-up endpoints and its respectively controllers.
 	// By default every endpoint will use port `27000` as decided below.
-	var port string = ":27000"
+	var addr string = "localhost:27000"
 
-	router := mux.NewRouter()
+	mux := http.NewServeMux()
 
 	var transactionsController transactionsController.TransactionsController
 	transactionsController.DatabaseProvider = databaseProvider
@@ -37,20 +34,13 @@ func main() {
 	var statementController statementController.StatementController
 	statementController.DatabaseProvider = databaseProvider
 
-	router.HandleFunc("/clientes/{id}/extrato", statementController.GetStatement).Methods("GET")
-	router.HandleFunc("/clientes/{id}/transacoes", transactionsController.SetNewTransaction).Methods("POST")
-
-	server := &http.Server{
-		Handler:      router,
-		Addr:         port,
-		WriteTimeout: 1 * time.Second,
-		ReadTimeout:  1 * time.Second,
-	}
+	mux.HandleFunc("POST /clientes/{id}/transacoes", transactionsController.SetNewTransaction)
+	mux.HandleFunc("GET /clientes/{id}/extrato", statementController.GetStatement)
 
 	// Booting the server.
 	// We are logging the port to help while we instantiate
 	// with docker-compose or clusterization technique.
-	log.Default().Printf("Server starting at internal port %s!\n", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	log.Default().Printf("Server starting at %s!\n", addr)
+	log.Fatal(http.ListenAndServe(addr, mux))
 	log.Default().Printf("Server started!\n")
 }

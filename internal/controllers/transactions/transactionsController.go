@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	databaseProvider "mybank/src/providers/database"
+	databaseProvider "mybank/internal/providers/database"
 	"net/http"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 const creditTransactionType string = "c"
@@ -38,7 +36,9 @@ type TransactionsController struct {
 func (controller *TransactionsController) SetNewTransaction(w http.ResponseWriter, r *http.Request) {
 	log.Default().Printf("Received request")
 
-	var clientId string = mux.Vars(r)["id"]
+	var path string = r.URL.Path
+	var segments []string = strings.Split(path, "/")
+	var clientId string = segments[2]
 	var newTransaction Transaction
 
 	// First we need to verify if user can

@@ -3,7 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	transactionsController "mybank/src/controllers/transactions"
+	transactionsController "mybank/internal/controllers/transactions"
 	"mybank/tests/mocks"
 	"net/http"
 	"net/http/httptest"
