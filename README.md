@@ -1,21 +1,24 @@
 # MyBank - Backend
 **A self-study project to learn Go Lang, Microservices Architecture and Relational Databases.**
 
-The idea of the project is to create 2 simple services based on **zanfranceschi/rinha-de-backend-2024-q1** where we must get the statement of certain bank user and also to allow simple transactions based on a brazilian banking system where the user can have "credits" (in portuguese "limite de saldo").
+This project aims to develop two basic backend services based on the "Rinha de Backend 2024 Q1" challenge (https://github.com/zanfranceschi/rinha-de-backend-2024-q1/issues), focusing on:
 
-I didn't want to participate in the competition "rinha-de-backend" because my idea is to learn how to develop backend systems and my main focus is to develop front-end mobile Apps for Apple ecosystem. Perhaps in the future I can participate. Who knows. 😁
+* Retrieving bank statements: Fetching account statements for specific users.
 
-## The Architectural Design
+* Simple transactions: Enabling basic transactions within a Brazilian banking system context, taking into account "limite de saldo" (credit limit).
 
-We are using Nginx as a proxy that will also work as load balancer. Then we have 2 microservices where are going to handle 2 endpoints:
+While the "Rinha de Backend" competition itself wasn't my intended participation due to my focus on building front-end mobile apps for the Apple ecosystem, this project serves as a learning experience for backend development. Future participation in such competitions may be considered.
 
-*- [POST] /clientes/{id}/transacoes*
+## Architectural Design
+### Components:
 
-*- [GET] /clientes/{id}/extrato*
+* Nginx: Acts as both a reverse proxy and load balancer, distributing incoming requests across microservices.
 
-Where the first one is to handle the actions the user can do like "withdraw" or "deposit" and the second one to get the full "statement".
+* 2 instances of microservices. Each one having both:
+    * Transactions Service: Handles user actions like "withdraw" and "deposit" via the [/clientes/{id}/transacoes]() (POST) endpoint.
+    * Statements Service: Retrieves full user statements via the [/clientes/{id}/extrato]() (GET) endpoint.
 
-In the future we are going to have a simple relation database but it's still in WIP.
+* Database: A simple relational database using PostgreSQL. See "sql" folder for the scripts.
 
 ## Code Complexity
 
